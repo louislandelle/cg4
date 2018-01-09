@@ -1,0 +1,116 @@
+<html>
+<head>
+
+    <title>CG1 Exercise 04 - Texturing</title>
+
+    <!-- import main JavaScript module using RequireJS -->
+    <script src="js/libs/three.min.js"></script>
+    <script src="js/libs/stats.min.js"></script>
+    <script src="js/libs/dat.gui.min.js"></script>
+    <script src="js/controls/TrackballControls.js"></script>
+    <script src="js/controls/OrbitControls.js"></script>
+
+    <script src="js/scenecontroller.js"></script>
+    <script src="js/htmlcontroller.js"></script>
+    <script src="js/main.js"></script>
+
+    <!-- import style sheet -->
+    <link rel="stylesheet" type="text/css" media="screen" href="style.css">
+
+</head>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+    varying vec2 vUv;
+
+    void main() {
+        vUv = uv;
+
+        gl_Position =   projectionMatrix * modelViewMatrix * vec4(position,1.0);
+    }
+</script>
+<script id="vertexSpherical" type="x-shader/x-vertex">
+    varying vec2 vUv;
+
+    void main() {        
+        vec4 p = vec4( position, 1. );    
+        vec3 e = normalize( vec3( modelViewMatrix * p ) );
+        vec3 n = normalize( normalMatrix * normal );
+        //vec3 r = reflect( e, n );
+        vec3 r = e - 2.0*dot(e, n)*n;
+        float theta = acos(r.z);
+        float phi = r.y >= 0.0 ? acos(r.x / sin(theta)) : 2.0*3.1415 - acos(r.x / sin(theta));
+        vUv = vec2(theta, phi);
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+    }
+</script>
+<script id="fragmentShader" type="x-shader/x-fragment">
+    uniform sampler2D texture;
+
+    varying vec2 vUv;
+
+    void main() {
+        gl_FragColor = texture2D(texture, vUv);
+    }
+</script>
+
+<script id="fragmentNearest" type="x-shader/x-fragment">
+    uniform sampler2D texture;
+
+    varying vec2 vUv;
+
+    void main() {
+        gl_FragColor = texture2D(texture, vUv);
+    }
+</script>
+<script id="fragmentLinear" type="x-shader/x-fragment">
+    uniform sampler2D texture;
+    uniform int twidth;
+    uniform int theight;
+
+    varying vec2 vUv;
+
+    void main(){   
+        float u = vUv.x;
+        float v = vUv.y;
+        float n = float(twidth);
+        float m = float(theight);
+        vec2 size = vec2(n, m);
+        float u_ = fract(u * n);
+        float v_ = fract(v * m);
+        float un = floor(u * n);
+        float vm = floor(v * m);
+        vec2 c0pos0 = vec2(un + 1.0, vm);
+        vec2 c0pos1 = vec2(un, vm);
+        vec2 c1pos0 = vec2(un + 1.0, vm + 1.0);
+        vec2 c1pos1 = vec2(un, vm + 1.0);
+        vec4 c_0 = u_ * texture2D(texture, c0pos0 / size) + (1.0 - u_) * texture2D(texture, c0pos1 / size);
+        vec4 c_1 = u_  * texture2D(texture, c1pos0 / size) + (1.0 - u_) * texture2D(texture, c1pos1 / size);
+        gl_FragColor = v_ * c_1 + (1.0 - v_) * c_0;
+    }
+</script>
+<script id="fragmentMMNearest" type="x-shader/x-fragment">
+    uniform sampler2D texture;
+
+    varying vec2 vUv;
+
+    void main() {
+        gl_FragColor = texture2D(texture, vUv);
+    }
+</script>
+<script id="fragmentMMLinear" type="x-shader/x-fragment">
+    uniform sampler2D texture;
+
+    varying vec2 vUv;
+
+    void main() {
+        gl_FragColor = texture2D(texture, vUv);
+    }
+</script>
+
+<body onLoad="main()">
+    <!-- this element will be used to diplay errors -->
+    <pre id="error"></pre>
+
+</body>
+</html>
